@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  ecommerce-app:
+    container_name: ecommerce
+    image: ecommerce
+    restart: always
+    user: node
+    build: .
+    ports:
+      - "3000:3000"
+    networks:
+      - frontend
+      - backend
+    environment:
+      - ECOM_DB_HOST=mongo
+      - ECOM_DB_USER=ecomuser
+      - ECOM_DB_PASSWORD=secretpassword
+      - ECOM_DB_NAME=ecomdb
+    volumes:
+      - ecomdata:/var/www/html:z
+
+  mongo:
+    container_name: ecom-mongo
+    image: mongo:latest
+    volumes:
+      - mongodata:/data/db:z
+    ports:
+      - "27017:27017"
+    networks:
+      - backend
+
+  proxy:
+    container_name: ecom-proxy
+    image: nginx:latest
+    depends_on:
+      - ecommerce-app
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl/localhost.crt:/etc/ssl/certs/localhost.crt:ro
+      - ./ssl/localhost.key:/etc/ssl/private/localhost.key:ro
+    ports:
+      - "8080:80"
+      - "443:443"
+    networks:
+      - frontend
+
+volumes:
+  ecomdata:
+  mongodata:
+
+networks:
+  frontend:
+  backend:
